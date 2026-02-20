@@ -13,13 +13,11 @@ from services.achievements import initialize_achievements
 from middlewares.admin_mode import AdminModeMiddleware
 
 
-# Настройка event loop для Windows
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 selector = selectors.SelectSelector()
 loop = asyncio.SelectorEventLoop(selector)
 asyncio.set_event_loop(loop)
 
-# Инициализация бота и диспетчера
 bot = Bot(token=Config.BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
@@ -27,11 +25,9 @@ dp = Dispatcher(storage=storage)
 dp.message.middleware(AdminModeMiddleware())
 dp.callback_query.middleware(AdminModeMiddleware())
 
-# Подключаем middleware
 dp.message.middleware(SubscriptionMiddleware())
 dp.callback_query.middleware(SubscriptionMiddleware())
 
-# Подключаем роутеры
 dp.include_router(registration.router)
 dp.include_router(menu.router)
 dp.include_router(learning.router)
@@ -40,11 +36,9 @@ dp.include_router(subscription.router)
 
 async def on_startup():
     """Действия при запуске бота"""
-    # Создаем таблицы в БД
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
-    # Инициализируем достижения
     async with AsyncSessionLocal() as db:
         await initialize_achievements(db)
     
@@ -63,17 +57,14 @@ async def send_daily_tip_wrapper():
         await send_daily_tip(bot, db)
 
 async def main():
-    # Настройка планировщика
     scheduler = AsyncIOScheduler()
     scheduler.add_job(send_daily_tip_wrapper, 'cron', hour=9, minute=0)  # Каждый день в 9:00
     scheduler.start()
     print("⏰ Планировщик задач запущен")
 
-    # Регистрируем обработчики событий
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
 
-    # Запускаем бота
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
