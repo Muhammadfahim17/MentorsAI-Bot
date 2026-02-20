@@ -9,7 +9,7 @@ from models import User
 from sqlalchemy import select
 import re
 from keyboards import (
-    get_main_menu_keyboard,  # <-- Reply клавиатура
+    get_main_menu_keyboard,  
     get_cancel_keyboard,
     get_roles_keyboard,
     get_confirm_keyboard,
@@ -19,7 +19,6 @@ from keyboards import (
 
 router = Router()
 
-# Состояния регистрации
 class Registration(StatesGroup):
     name = State()
     surname = State()
@@ -51,12 +50,10 @@ async def cmd_start(message: Message, state: FSMContext):
             )
         break
 
-# ===== ШАГ 1: ИМЯ (ТОЛЬКО ТЕКСТ) =====
 @router.message(Registration.name)
 async def process_name(message: Message, state: FSMContext):
     name = message.text.strip()
     
-    # Проверка: только буквы, минимум 2 символа
     if not name.replace(' ', '').isalpha() or len(name) < 2:
         await message.answer(
             "❌ Имя должно содержать только буквы и быть не короче 2 символов.\n"
@@ -64,7 +61,6 @@ async def process_name(message: Message, state: FSMContext):
         )
         return
     
-    # Проверка на числа
     if any(char.isdigit() for char in name):
         await message.answer(
             "❌ Имя не должно содержать цифры.\n"
@@ -79,16 +75,13 @@ async def process_name(message: Message, state: FSMContext):
         reply_markup=get_cancel_keyboard()
     )
 
-# ===== ШАГ 2: ФАМИЛИЯ (ТОЛЬКО ТЕКСТ, МОЖНО ПРОПУСТИТЬ) =====
 @router.message(Registration.surname)
 async def process_surname(message: Message, state: FSMContext):
     surname = message.text.strip()
     
-    # Можно пропустить
     if surname == "-":
         surname = None
     else:
-        # Проверка: только буквы
         if not surname.replace(' ', '').isalpha():
             await message.answer(
                 "❌ Фамилия должна содержать только буквы.\n"
@@ -96,7 +89,6 @@ async def process_surname(message: Message, state: FSMContext):
             )
             return
         
-        # Проверка на числа
         if any(char.isdigit() for char in surname):
             await message.answer(
                 "❌ Фамилия не должна содержать цифры.\n"
@@ -111,12 +103,10 @@ async def process_surname(message: Message, state: FSMContext):
         reply_markup=get_cancel_keyboard()
     )
 
-# ===== ШАГ 3: ВОЗРАСТ (ТОЛЬКО ЧИСЛО) =====
 @router.message(Registration.age)
 async def process_age(message: Message, state: FSMContext):
     age_text = message.text.strip()
     
-    # Проверка: только цифры
     if not age_text.isdigit():
         await message.answer(
             "❌ Возраст должен быть числом.\n"
@@ -126,7 +116,6 @@ async def process_age(message: Message, state: FSMContext):
     
     age = int(age_text)
     
-    # Проверка диапазона
     if age < 5 or age > 120:
         await message.answer(
             "❌ Возраст должен быть от 5 до 120 лет.\n"
@@ -141,7 +130,6 @@ async def process_age(message: Message, state: FSMContext):
         reply_markup=get_roles_keyboard()
     )
 
-# ===== ШАГ 4: РОЛЬ (ВЫБОР ИЗ КНОПОК) =====
 @router.callback_query(Registration.role)
 async def process_role(callback: CallbackQuery, state: FSMContext):
     role_map = {
@@ -167,19 +155,14 @@ async def process_role(callback: CallbackQuery, state: FSMContext):
     )
     await callback.answer()
 
-# ===== ШАГ 5: ФОТО (ПРОВЕРКА, ЧТО ЭТО ФОТО) =====
 @router.message(Registration.photo, F.photo)
 async def process_photo(message: Message, state: FSMContext):
-    # Получаем file_id самого большого фото
     photo_file_id = message.photo[-1].file_id
     
-    # Сохраняем фото
     await state.update_data(photo=photo_file_id)
     
-    # Получаем все данные для предпросмотра
     data = await state.get_data()
     
-    # Формируем карточку
     profile_text = (
         f"📇 **Ваша карточка:**\n\n"
         f"👤 **Имя:** {data['name']}\n"
@@ -191,11 +174,10 @@ async def process_photo(message: Message, state: FSMContext):
     await message.answer_photo(
         photo=photo_file_id,
         caption=profile_text,
-        reply_markup=get_confirm_keyboard()  # Кнопки "✅ Всё верно" / "✏️ Изменить"
+        reply_markup=get_confirm_keyboard()  
     )
     await state.set_state(Registration.confirm)
 
-# Если прислали не фото
 @router.message(Registration.photo)
 async def process_photo_invalid(message: Message, state: FSMContext):
     await message.answer(
@@ -204,14 +186,12 @@ async def process_photo_invalid(message: Message, state: FSMContext):
         reply_markup=get_cancel_keyboard()
     )
 
-# ===== ШАГ 6: ПОДТВЕРЖДЕНИЕ =====
 @router.callback_query(Registration.confirm, F.data == "confirm")
 async def process_confirm(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     telegram_id = callback.from_user.id
     
     async for db in get_db():
-        # Создаем пользователя
         user = User(
             tg_id=telegram_id,
             name=data['name'],
@@ -241,11 +221,10 @@ async def process_edit(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete()
     await callback.message.answer(
         "Выберите, что хотите изменить:",
-        reply_markup=get_edit_keyboard()  # Кнопки для выбора поля
+        reply_markup=get_edit_keyboard()
     )
     await callback.answer()
 
-# ===== ОТМЕНА =====
 @router.message(F.text == "❌ Отмена")
 async def cancel_handler(message: Message, state: FSMContext):
     await state.clear()

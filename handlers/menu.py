@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 router = Router()
 
-# ===== ОБРАБОТЧИКИ REPLY КНОПОК =====
 
 @router.message(F.text == "👤 Профиль")
 async def profile_handler(message: Message):
@@ -130,7 +129,6 @@ async def faq_handler(message: Message):
     faqs = json_db.get_faq()
     
     if not faqs:
-        # Если нет FAQ в JSON, показываем стандартные
         text = (
             "❓ **Часто задаваемые вопросы**\n\n"
             "**1. Как начать обучение?**\n"
@@ -143,7 +141,6 @@ async def faq_handler(message: Message):
             "   Напишите @admin"
         )
     else:
-        # Формируем текст из JSON
         text = "❓ **Часто задаваемые вопросы**\n\n"
         for i, faq in enumerate(faqs, 1):
             text += f"**{i}. {faq.get('question', 'Вопрос')}**\n{faq.get('answer', 'Ответ')}\n\n"
@@ -179,7 +176,6 @@ async def about_handler(message: Message):
     )
     await message.answer(text, reply_markup=back_button("back_to_main"))
 
-# ===== ОБРАБОТЧИКИ INLINE КНОПОК =====
 
 @router.callback_query(F.data == "back_to_main")
 async def back_to_main_handler(callback: CallbackQuery):

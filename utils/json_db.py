@@ -13,11 +13,9 @@ BACKUP_DIR = "data/backups"
 
 class JSONDB:
     def __init__(self):
-        # Создаем папки, если их нет
         os.makedirs(DATA_DIR, exist_ok=True)
         os.makedirs(BACKUP_DIR, exist_ok=True)
         
-        # Создаем файлы, если их нет
         self._ensure_file_exists("categories.json", [])
         self._ensure_file_exists("subcategories.json", [])
         self._ensure_file_exists("materials.json", [])
@@ -54,11 +52,9 @@ class JSONDB:
         backup_path = os.path.join(BACKUP_DIR, f"{filename}.{datetime.now().strftime('%Y%m%d_%H%M%S')}.bak")
         
         try:
-            # Создаем бэкап
             if os.path.exists(filepath):
                 shutil.copy2(filepath, backup_path)
             
-            # Записываем новые данные
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             return True
@@ -66,7 +62,7 @@ class JSONDB:
             logger.error(f"Ошибка записи {filename}: {e}")
             return False
     
-    # ===== КАТЕГОРИИ =====
+
     def get_categories(self) -> List[Dict]:
         """Получить все категории"""
         return self._read_file("categories.json")
@@ -107,21 +103,17 @@ class JSONDB:
         """Удалить категорию и все связанные подкатегории"""
         categories = self.get_categories()
         
-        # Проверяем, есть ли категория
         category_exists = any(c['id'] == category_id for c in categories)
         if not category_exists:
             return False
         
-        # Удаляем связанные подкатегории
         self.delete_subcategories_by_category(category_id)
         
-        # Удаляем категорию
         categories = [c for c in categories if c['id'] != category_id]
         self._write_file("categories.json", categories)
         logger.info(f"Удалена категория ID {category_id}")
         return True
     
-    # ===== ПОДКАТЕГОРИИ =====
     def get_subcategories(self, category_id: Optional[int] = None) -> List[Dict]:
         """Получить подкатегории (все или по категории)"""
         subcats = self._read_file("subcategories.json")
@@ -170,15 +162,12 @@ class JSONDB:
         """Удалить подкатегорию"""
         subcats = self.get_subcategories()
         
-        # Проверяем, есть ли подкатегория
         sub_exists = any(s['id'] == subcategory_id for s in subcats)
         if not sub_exists:
             return False
         
-        # Удаляем связанные материалы
         self.delete_materials_by_subcategory(subcategory_id)
         
-        # Удаляем подкатегорию
         subcats = [s for s in subcats if s['id'] != subcategory_id]
         self._write_file("subcategories.json", subcats)
         logger.info(f"Удалена подкатегория ID {subcategory_id}")
@@ -188,18 +177,15 @@ class JSONDB:
         """Удалить все подкатегории категории"""
         subcats = self.get_subcategories()
         
-        # Удаляем материалы для каждой подкатегории
         for sub in subcats:
             if sub['category_id'] == category_id:
                 self.delete_materials_by_subcategory(sub['id'])
         
-        # Удаляем подкатегории
         subcats = [s for s in subcats if s['category_id'] != category_id]
         self._write_file("subcategories.json", subcats)
         logger.info(f"Удалены подкатегории категории {category_id}")
         return True
     
-    # ===== МАТЕРИАЛЫ =====
     def get_materials(self, subcategory_id: Optional[int] = None) -> List[Dict]:
         """Получить материалы (все или по подкатегории)"""
         materials = self._read_file("materials.json")
@@ -216,7 +202,7 @@ class JSONDB:
         return None
     
     def add_material(self, subcategory_id: int, order_num: int, name: str, 
-                     description: Optional[str], content_type: str, content: Dict) -> Dict:
+        description: Optional[str], content_type: str, content: Dict) -> Dict:
         """Добавить материал"""
         materials = self.get_materials()
         new_id = max([m['id'] for m in materials], default=0) + 1
@@ -231,7 +217,6 @@ class JSONDB:
         }
         materials.append(new_material)
         
-        # Сортируем по order_num
         materials.sort(key=lambda x: x['order_num'])
         
         self._write_file("materials.json", materials)
@@ -253,7 +238,6 @@ class JSONDB:
         """Удалить материал"""
         materials = self.get_materials()
         
-        # Проверяем, есть ли материал
         material_exists = any(m['id'] == material_id for m in materials)
         if not material_exists:
             return False
@@ -278,7 +262,6 @@ class JSONDB:
             return 0
         return max(m['order_num'] for m in materials)
     
-    # ===== FAQ =====
     def get_faq(self) -> List[Dict]:
         """Получить все FAQ"""
         return self._read_file("faq.json")
@@ -303,7 +286,6 @@ class JSONDB:
         self._write_file("faq.json", faqs)
         return True
     
-    # ===== TIPS =====
     def get_tips(self) -> List[str]:
         """Получить все советы"""
         return self._read_file("tips.json")
@@ -332,5 +314,4 @@ class JSONDB:
             return True
         return False
 
-# Глобальный экземпляр
 json_db = JSONDB()

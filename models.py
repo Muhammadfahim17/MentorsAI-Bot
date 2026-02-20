@@ -18,7 +18,6 @@ class User(Base):
     last_active = Column(DateTime, default=func.now())
     registered_at = Column(DateTime, default=func.now())
     
-    # Связи
     progress = relationship("UserProgress", back_populates="user", cascade="all, delete-orphan")
     achievements = relationship("UserAchievement", back_populates="user", cascade="all, delete-orphan")
     bookmarks = relationship("Bookmark", back_populates="user", cascade="all, delete-orphan")
@@ -50,7 +49,6 @@ class UserProgress(Base):
     completed_materials = Column(JSON, default=list)
     last_accessed = Column(DateTime, default=func.now())
 
-    # Связь с пользователем
     user = relationship("User", back_populates="progress")
 
 class Achievement(Base):
@@ -61,7 +59,6 @@ class Achievement(Base):
     description = Column(Text)
     icon = Column(String(10), default="🏆")
     
-    # Связь
     user_achievements = relationship("UserAchievement", back_populates="achievement", cascade="all, delete-orphan")
 
 class UserAchievement(Base):
@@ -71,19 +68,16 @@ class UserAchievement(Base):
     achievement_id = Column(Integer, ForeignKey("achievements.id"), nullable=False)
     unlocked_at = Column(DateTime, default=func.now())
     
-    # Связи
     user = relationship("User", back_populates="achievements")
     achievement = relationship("Achievement", back_populates="user_achievements")
 
-# ===== ДОБАВЛЯЕМ МОДЕЛЬ BOOKMARK =====
 class Bookmark(Base):
     __tablename__ = "bookmarks"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    material_id = Column(Integer, nullable=False)  # ID из JSON
-    subcategory_id = Column(Integer, nullable=False)  # ID из JSON
+    material_id = Column(Integer, nullable=False)  
+    subcategory_id = Column(Integer, nullable=False)  
     material_name = Column(String(200))
     added_at = Column(DateTime, default=func.now())
     
-    # Связь с пользователем
     user = relationship("User", back_populates="bookmarks")

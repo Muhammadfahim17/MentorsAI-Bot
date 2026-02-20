@@ -21,7 +21,6 @@ async def check_subscription(callback: CallbackQuery):
     
     async for db in get_db():
         try:
-            # Получаем пользователя
             user = await db.execute(select(User).where(User.tg_id == user_id))
             user = user.scalar_one_or_none()
             
@@ -32,12 +31,10 @@ async def check_subscription(callback: CallbackQuery):
                 )
                 return
             
-            # Получаем активных спонсоров
             sponsors = await db.execute(select(Sponsor).where(Sponsor.is_active == True))
             sponsors = sponsors.scalars().all()
             
             if not sponsors:
-                # Если нет спонсоров
                 user.is_subscribed = True
                 await db.commit()
                 await callback.message.delete()
@@ -48,7 +45,6 @@ async def check_subscription(callback: CallbackQuery):
                 await callback.answer("✅ Доступ разрешен")
                 return
             
-            # Проверяем подписку на каждого спонсора
             not_subscribed = []
             for sponsor in sponsors:
                 try:
@@ -63,12 +59,10 @@ async def check_subscription(callback: CallbackQuery):
                     not_subscribed.append(sponsor)
             
             if not_subscribed:
-                # Если есть неподписанные спонсоры
                 text = "❌ **Вы подписались не на всех!**\n\nОсталось:\n"
                 for s in not_subscribed:
                     text += f"• {s.name}\n"
                 
-                # Обновляем статус в БД на False
                 if user.is_subscribed:
                     user.is_subscribed = False
                     await db.commit()
@@ -81,7 +75,6 @@ async def check_subscription(callback: CallbackQuery):
                 )
                 await callback.answer("❌ Подпишитесь на всех", show_alert=True)
             else:
-                # Если подписан на всех
                 if not user.is_subscribed:
                     user.is_subscribed = True
                     await db.commit()

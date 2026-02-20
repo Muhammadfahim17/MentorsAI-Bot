@@ -1,7 +1,6 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-# ===== REPLY КЛАВИАТУРЫ (обычные кнопки внизу) =====
 
 def get_main_menu_keyboard():
     """Главное меню с кнопками (ReplyKeyboard)"""
@@ -40,7 +39,6 @@ def get_admin_reply_keyboard():
     ]
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
-# ===== INLINE КЛАВИАТУРЫ =====
 
 def main_menu():
     """Инлайн главное меню"""
@@ -91,7 +89,6 @@ def get_edit_keyboard():
     builder.adjust(2)
     return builder.as_markup()
 
-# ===== КЛАВИАТУРЫ ДЛЯ ОБУЧЕНИЯ (ИЗ JSON) =====
 
 def get_categories_keyboard(categories):
     """Кнопки категорий из JSON"""
@@ -138,13 +135,11 @@ def stars_keyboard(sub_id: int):
     """Кнопки оценки звездами (альтернативное название)"""
     return get_rating_keyboard(sub_id)
 
-# ===== КЛАВИАТУРЫ ДЛЯ АДМИНА =====
 
 def get_categories_inline(categories, prefix="cat"):
     """Инлайн клавиатура для выбора категории (админ)"""
     builder = InlineKeyboardBuilder()
     for cat in categories:
-        # Поддерживаем и SQL объекты, и JSON словари
         if isinstance(cat, dict):
             text = cat['name']
             cat_id = cat['id']
@@ -160,7 +155,6 @@ def get_subcategories_inline(subcategories, prefix="sub"):
     """Инлайн клавиатура для выбора подкатегории (админ)"""
     builder = InlineKeyboardBuilder()
     for sub in subcategories:
-        # Поддерживаем и SQL объекты, и JSON словари
         if isinstance(sub, dict):
             text = sub['name']
             sub_id = sub['id']

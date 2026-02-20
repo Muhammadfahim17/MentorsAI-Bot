@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from sqlalchemy import select
 from datetime import datetime
 from database import get_db
-from models import User, UserProgress, Bookmark  # <-- ДОБАВИЛИ Bookmark
+from models import User, UserProgress, Bookmark  
 from keyboards import (
     get_main_menu_keyboard,
     get_categories_keyboard,
@@ -63,7 +63,6 @@ async def subcategory_selected(callback: CallbackQuery, state: FSMContext):
     sub_id = int(callback.data.split("_")[1])
     telegram_id = callback.from_user.id
     
-    # Получаем материалы из JSON
     materials = json_db.get_materials(sub_id)
     materials = sorted(materials, key=lambda x: x['order_num'])
     
@@ -71,7 +70,6 @@ async def subcategory_selected(callback: CallbackQuery, state: FSMContext):
         await callback.answer("В этой подкатегории пока нет материалов", show_alert=True)
         return
     
-    # Проверяем прогресс в PostgreSQL
     async for db in get_db():
         user = await db.execute(select(User).where(User.tg_id == telegram_id))
         user = user.scalar_one_or_none()
@@ -80,7 +78,6 @@ async def subcategory_selected(callback: CallbackQuery, state: FSMContext):
             await callback.answer("Сначала зарегистрируйтесь", show_alert=True)
             return
         
-        # Проверяем существующий прогресс
         progress = await db.execute(
             select(UserProgress).where(
                 UserProgress.user_id == user.id,
@@ -90,7 +87,6 @@ async def subcategory_selected(callback: CallbackQuery, state: FSMContext):
         progress = progress.scalar_one_or_none()
         
         if progress and progress.current_material_index > 0:
-            # Есть прогресс - спрашиваем, хочет ли продолжить
             await state.update_data(
                 current_subcategory=sub_id,
                 current_index=progress.current_material_index,
@@ -107,9 +103,7 @@ async def subcategory_selected(callback: CallbackQuery, state: FSMContext):
                 reply_markup=get_continue_keyboard(sub_id)
             )
         else:
-            # Новый курс - начинаем с первого урока
             if not progress:
-                # Создаем новый прогресс
                 progress = UserProgress(
                     user_id=user.id,
                     subcategory_id=sub_id,
@@ -144,7 +138,6 @@ async def restart_course(callback: CallbackQuery, state: FSMContext):
     sub_id = int(callback.data.split("_")[1])
     telegram_id = callback.from_user.id
     
-    # Сбрасываем прогресс
     async for db in get_db():
         user = await db.execute(select(User).where(User.tg_id == telegram_id))
         user = user.scalar_one()
@@ -173,7 +166,6 @@ async def start_learning(message, sub_id, start_index, telegram_id):
 
 async def show_material(message, material, current_index, total, sub_id, telegram_id):
     """Показать материал урока"""
-    # Сохраняем прогресс в БД
     async for db in get_db():
         user = await db.execute(select(User).where(User.tg_id == telegram_id))
         user = user.scalar_one()
@@ -189,7 +181,6 @@ async def show_material(message, material, current_index, total, sub_id, telegra
         progress.last_accessed = datetime.utcnow()
         await db.commit()
     
-    # Отправляем материал в зависимости от типа
     if material['content_type'] == "text":
         text = f"**{material['name']}**\n\n"
         if material.get('description'):
@@ -257,7 +248,6 @@ async def next_material(callback: CallbackQuery, state: FSMContext):
     materials = sorted(materials, key=lambda x: x['order_num'])
     
     if current + 1 >= len(materials):
-        # Последний урок - показываем сообщение о завершении
         await callback.message.edit_text(
             "🎉 **Поздравляем! Вы прошли все уроки!**\n\n"
             "Скоро здесь будет тест для проверки знаний.",
@@ -316,7 +306,6 @@ async def save_material(callback: CallbackQuery):
     material_id = int(callback.data.split("_")[1])
     telegram_id = callback.from_user.id
     
-    # Получаем информацию о материале из JSON
     material = json_db.get_material(material_id)
     if not material:
         await callback.answer("❌ Материал не найден", show_alert=True)
@@ -324,11 +313,9 @@ async def save_material(callback: CallbackQuery):
     
     async for db in get_db():
         try:
-            # Получаем пользователя
             user = await db.execute(select(User).where(User.tg_id == telegram_id))
             user = user.scalar_one()
             
-            # Проверяем, не сохранен ли уже этот материал
             from models import Bookmark
             existing = await db.execute(
                 select(Bookmark).where(
@@ -340,7 +327,6 @@ async def save_material(callback: CallbackQuery):
                 await callback.answer("❌ Этот материал уже в закладках", show_alert=True)
                 return
             
-            # Создаем закладку
             bookmark = Bookmark(
                 user_id=user.id,
                 material_id=material_id,
@@ -364,13 +350,10 @@ async def rate_course(callback: CallbackQuery):
     stars = int(parts[2])
     telegram_id = callback.from_user.id
     
-    # Сохраняем оценку в PostgreSQL
     async for db in get_db():
         user = await db.execute(select(User).where(User.tg_id == telegram_id))
         user = user.scalar_one()
         
-        # Здесь можно создать модель UserRating если нужно
-        # Пока просто сохраняем в прогресс
         progress = await db.execute(
             select(UserProgress).where(
                 UserProgress.user_id == user.id,
@@ -378,7 +361,6 @@ async def rate_course(callback: CallbackQuery):
             )
         )
         progress = progress.scalar_one()
-        # Можно добавить поле rating в модель UserProgress
         await db.commit()
     
     await callback.answer(f"Спасибо за оценку {stars} ⭐!", show_alert=True)

@@ -7,30 +7,25 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Создаем базовый класс для моделей
 Base = declarative_base()
 
-# Создаем движок
 engine = create_async_engine(
     Config.DATABASE_URL,
     echo=True,
     pool_pre_ping=True
 )
 
-# Создаем фабрику сессий - ЭТО НУЖНО ДЛЯ ЭКСПОРТА
 AsyncSessionLocal = sessionmaker(
     engine, 
     class_=AsyncSession, 
     expire_on_commit=False
 )
 
-# Функция для получения сессии (для хендлеров)
 async def get_db():
     """Возвращает сессию базы данных для использования с 'async for'"""
     async with AsyncSessionLocal() as session:
         yield session
 
-# Функция для проверки соединения
 async def check_connection():
     try:
         async with engine.connect() as conn:

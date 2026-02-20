@@ -9,21 +9,17 @@ def fix_handlers():
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
             
-            # Заменяем "async with get_db() as db" на "async for db in get_db()"
             new_content = re.sub(
                 r'async with get_db\(\) as (\w+)',
                 r'async for \1 in get_db()',
                 content
             )
             
-            # Добавляем break после использования, если его нет
             lines = new_content.split("\n")
             for i, line in enumerate(lines):
                 if "async for db in get_db()" in line:
-                    # Ищем конец блока и добавляем break
                     indent = len(line) - len(line.lstrip())
                     if i+1 < len(lines) and lines[i+1].strip() and not lines[i+1].strip().startswith("break"):
-                        # Добавляем break в конец блока (упрощенно)
                         pass
             
             if new_content != content:
