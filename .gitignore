@@ -1,0 +1,54 @@
+# Виртуальное окружение
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# Python кэш
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+
+# Базы данных
+*.db
+*.sqlite3
+
+# Файлы конфигурации
+config.py
+.env
+*.conf
+
+# Логи
+*.log
+logs/
+
+# ID редакторов
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+
+# Бэкапы JSON (опционально - если не хотите хранить бэкапы в репе)
+data/backups/
+*.bak
+
+# Файлы токенов
+*.token
+*.key
+*.pem
+
+# Тестовые файлы
+test_*.py
+*_test.py
+
+# Временные файлы
+tmp/
+temp/
